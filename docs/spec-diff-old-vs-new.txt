@@ -1,0 +1,107 @@
+GONE POST /auth
+GONE DELETE /auth/revoke
+## GET /projects 
+  res +[color,budget_options,only_admin_publish,only_admin_see_others,project_id_source,keep_from_source,total_pending_todos,custom_fields,todo_permissions,todo_allowed_actions] -[] ~[active:integer[0,1]->boolean; billable:integer DEP->integer DEP RO; budget_by:string[billing,time]->string[billing,time,none]; contractor_id:integer->integer DEP RO; time_total:integer RO->string RO]
+  query +[custom_fields.{id},only_active_projects,opt_sort_by,opt_sort_direction,opt_show_total] -[]
+## POST /projects 
+  res +[color,budget_options,only_admin_publish,only_admin_see_others,project_id_source,keep_from_source,total_pending_todos,custom_fields,todo_permissions,todo_allowed_actions] -[] ~[active:integer[0,1]->boolean; billable:integer DEP->integer DEP RO; budget_by:string[billing,time]->string[billing,time,none]; contractor_id:integer->integer DEP RO; time_total:integer RO->string RO]
+  body +[color,budget_options,project_id_source,keep_from_source,custom_fields,todo_permissions] -[contractor_id] ~[active:integer[0,1]->boolean; budget_by:string[billing,time]->string[billing,time,none]]
+## GET /projects/:projectId 
+  res +[color,budget_options,only_admin_publish,only_admin_see_others,project_id_source,keep_from_source,total_pending_todos,custom_fields,todo_permissions,todo_allowed_actions] -[] ~[active:integer[0,1]->boolean; billable:integer DEP->integer DEP RO; budget_by:string[billing,time]->string[billing,time,none]; contractor_id:integer->integer DEP RO; time_total:integer RO->string RO]
+  query +[opt_expand] -[]
+## POST /projects/:projectId 
+  res +[color,budget_options,only_admin_publish,only_admin_see_others,project_id_source,keep_from_source,total_pending_todos,custom_fields,todo_permissions,todo_allowed_actions] -[] ~[active:integer[0,1]->boolean; billable:integer DEP->integer DEP RO; budget_by:string[billing,time]->string[billing,time,none]; contractor_id:integer->integer DEP RO; time_total:integer RO->string RO]
+  body +[color,budget_options,project_id_source,keep_from_source,custom_fields,todo_permissions] -[contractor_id] ~[active:integer[0,1]->boolean; budget_by:string[billing,time]->string[billing,time,none]]
+## GET /projects/:projectId/users 
+  res +[budget,user_role,user_profile_photo,user_profile_photo_url] -[] ~[billable:integer->integer DEP RO]
+## POST /projects/:projectId/users/:userId 
+  res +[budget,user_role,user_profile_photo,user_profile_photo_url] -[] ~[billable:integer->integer DEP RO]
+  body +[budget] -[] ~[]
+## GET /projects/:projectId/users/available 
+  res +[profile_photo,profile_photo_url] -[] ~[]
+## GET /projects/:projectId/tasks 
+  res +[budget,rate,color,user_id,user_name,user_email] -[] ~[]
+  query +[checked] -[]
+## POST /projects/:projectId/tasks/:taskId 
+  res +[budget,rate,color,user_id,user_name,user_email] -[] ~[]
+  body +[budget,rate] -[] ~[]
+## POST /projects/:projectId/tasks/:taskId/check 
+  res +[budget,rate,color,user_id,user_name,user_email] -[] ~[]
+## POST /projects/:projectId/tasks/:taskId/uncheck 
+  res +[budget,rate,color,user_id,user_name,user_email] -[] ~[]
+## GET /projects/:projectId/tasks/available 
+  res +[color,active,custom_fields] -[date_changed] ~[]
+## GET /todos 
+  res +[due_on,parent_todo_id,external_ref,time_total,subtodo_time_estimate_sum,subtodo_time_total_sum,time_progress,attachments_count,comments_count,subtodos_count,todo_list_color,changed_by_user_name,user_profile_photo,user_profile_photo_url,todo_allowed_actions,ancestor_name_path,name_path,depth,tags,tag_ids,highlighted_tag_id] -[] ~[]
+  query +[only_my_projects,trashed,parent_todo_id,only_root_todos,has_name,enrich_hierarchy_display,external_ref_is_set,external_ref_provider,external_ref_entity_type,external_ref_entity_id,external_ref_alt_id,external_ref_parent_id,external_ref_parent_type] -[]
+## POST /todos 
+  res +[due_on,parent_todo_id,external_ref,time_total,subtodo_time_estimate_sum,subtodo_time_total_sum,time_progress,attachments_count,comments_count,subtodos_count,todo_list_color,changed_by_user_name,user_profile_photo,user_profile_photo_url,todo_allowed_actions,ancestor_name_path,name_path,depth,tags,tag_ids,highlighted_tag_id] -[] ~[]
+  body +[due_on,parent_todo_id,external_ref,tag_ids,highlighted_tag_id] -[] ~[]
+## GET /todos/:todoId 
+  res +[due_on,parent_todo_id,external_ref,time_total,subtodo_time_estimate_sum,subtodo_time_total_sum,time_progress,attachments_count,comments_count,subtodos_count,todo_list_color,changed_by_user_name,user_profile_photo,user_profile_photo_url,todo_allowed_actions,ancestor_name_path,name_path,depth,tags,tag_ids,highlighted_tag_id] -[] ~[]
+  query +[trashed] -[]
+## POST /todos/:todoId 
+  res +[due_on,parent_todo_id,external_ref,time_total,subtodo_time_estimate_sum,subtodo_time_total_sum,time_progress,attachments_count,comments_count,subtodos_count,todo_list_color,changed_by_user_name,user_profile_photo,user_profile_photo_url,todo_allowed_actions,ancestor_name_path,name_path,depth,tags,tag_ids,highlighted_tag_id] -[] ~[]
+  body +[due_on,parent_todo_id,external_ref,tag_ids,highlighted_tag_id] -[] ~[]
+## GET /todo-lists 
+  res +[color] -[changed_by] ~[]
+  query +[id] -[]
+## POST /todo-lists 
+  res +[color] -[changed_by] ~[]
+  body +[color] -[] ~[]
+## GET /todo-lists/:todoListId 
+  res +[color] -[changed_by] ~[]
+## POST /todo-lists/:todoListId 
+  res +[color] -[changed_by] ~[]
+  body +[color] -[] ~[]
+## GET /users 
+  res +[auto_assign_new_users,cost_rate_start_at_new,custom_fields,last_calendar_id,last_calendar_start_at_new,last_calendar_start_at,profile_photo,total_projects,total_assigned_users,permissions] -[] ~[assigned_team_ids:array->array RO; capacity_per_day:integer->number; cost_rate_start_at:string->string RO; manage_restricted_teams:boolean->boolean DEP]
+## POST /users 
+  res +[auto_assign_new_users,cost_rate_start_at_new,custom_fields,last_calendar_id,last_calendar_start_at_new,last_calendar_start_at,profile_photo,total_projects,total_assigned_users,permissions] -[] ~[assigned_team_ids:array->array RO; capacity_per_day:integer->number; cost_rate_start_at:string->string RO; manage_restricted_teams:boolean->boolean DEP]
+  body +[auto_assign_new_users,cost_rate_start_at_new,custom_fields,last_calendar_id,last_calendar_start_at_new,permissions] -[assigned_team_ids,cost_rate_start_at,manage_restricted_teams] ~[capacity_per_day:integer->number]
+## GET /users/:userId 
+  res +[auto_assign_new_users,cost_rate_start_at_new,custom_fields,last_calendar_id,last_calendar_start_at_new,last_calendar_start_at,profile_photo,total_projects,total_assigned_users,permissions] -[] ~[assigned_team_ids:array->array RO; capacity_per_day:integer->number; cost_rate_start_at:string->string RO; manage_restricted_teams:boolean->boolean DEP]
+## POST /users/:userId 
+  res +[auto_assign_new_users,cost_rate_start_at_new,custom_fields,last_calendar_id,last_calendar_start_at_new,last_calendar_start_at,profile_photo,total_projects,total_assigned_users,permissions] -[] ~[assigned_team_ids:array->array RO; capacity_per_day:integer->number; cost_rate_start_at:string->string RO; manage_restricted_teams:boolean->boolean DEP]
+  body +[auto_assign_new_users,cost_rate_start_at_new,custom_fields,last_calendar_id,last_calendar_start_at_new,permissions] -[assigned_team_ids,cost_rate_start_at,manage_restricted_teams] ~[capacity_per_day:integer->number]
+## GET /tasks 
+  res +[color,active,custom_fields] -[date_changed] ~[]
+  query +[id,active] -[]
+## POST /tasks 
+  res +[color,active,custom_fields] -[date_changed] ~[]
+  body +[color,is_billable_default,active,custom_fields] -[] ~[]
+## GET /tasks/:taskId 
+  res +[color,active,custom_fields] -[date_changed] ~[]
+## POST /tasks/:taskId 
+  res +[color,active,custom_fields] -[date_changed] ~[]
+  body +[color,is_billable_default,active,custom_fields] -[] ~[]
+## GET /customers 
+  res +[email,phone,phone2,phone3,address,city,state,country,cnpj,cpf,contact,type_person,custom_fields] -[] ~[active:integer[0,1]->boolean]
+  query +[customer_id] -[]
+## POST /customers 
+  res +[email,phone,phone2,phone3,address,city,state,country,cnpj,cpf,contact,type_person,custom_fields] -[] ~[active:integer[0,1]->boolean]
+  body +[email,phone,phone2,phone3,address,city,state,country,cnpj,cpf,custom_fields] -[] ~[active:integer[0,1]->boolean]
+## GET /customers/:customerId 
+  res +[email,phone,phone2,phone3,address,city,state,country,cnpj,cpf,contact,type_person,custom_fields] -[] ~[active:integer[0,1]->boolean]
+## POST /customers/:customerId 
+  res +[email,phone,phone2,phone3,address,city,state,country,cnpj,cpf,contact,type_person,custom_fields] -[] ~[active:integer[0,1]->boolean]
+  body +[email,phone,phone2,phone3,address,city,state,country,cnpj,cpf,custom_fields] -[] ~[active:integer[0,1]->boolean]
+## POST /time-entries 
+  res +[rate_hour,rate_total,has_overtime,overtime,regular_time,start_stopwatch,is_editable,approval_id,approval_status,created_at,changed_at,creator_id,changed_by_user_name,user_email,task_color,project_color,manager_id,manager_name,todo_id,todo_name,cost_rate,cost_amount,billable_tax_rate,billable_tax_amount,billable_net_amount,margin_amount,breaks_total,break_intervals,external_ref,custom_fields] -[value_honorary_hour,value_honorary_total] ~[]
+  body +[has_overtime,overtime,start_stopwatch,todo_id,breaks_total,break_intervals,external_ref,custom_fields] -[] ~[]
+## GET /time-entries/:timeEntryId 
+  res +[rate_hour,rate_total,has_overtime,overtime,regular_time,start_stopwatch,is_editable,approval_id,approval_status,created_at,changed_at,creator_id,changed_by_user_name,user_email,task_color,project_color,manager_id,manager_name,todo_id,todo_name,cost_rate,cost_amount,billable_tax_rate,billable_tax_amount,billable_net_amount,margin_amount,breaks_total,break_intervals,external_ref,custom_fields] -[value_honorary_hour,value_honorary_total] ~[]
+## POST /time-entries/:timeEntryId 
+  res +[rate_hour,rate_total,has_overtime,overtime,regular_time,start_stopwatch,is_editable,approval_id,approval_status,created_at,changed_at,creator_id,changed_by_user_name,user_email,task_color,project_color,manager_id,manager_name,todo_id,todo_name,cost_rate,cost_amount,billable_tax_rate,billable_tax_amount,billable_net_amount,margin_amount,breaks_total,break_intervals,external_ref,custom_fields] -[value_honorary_hour,value_honorary_total] ~[]
+  body +[has_overtime,overtime,start_stopwatch,todo_id,breaks_total,break_intervals,external_ref,custom_fields] -[] ~[]
+## POST /time-entries/:timeEntryId/start 
+  res +[rate_hour,rate_total,has_overtime,overtime,regular_time,start_stopwatch,is_editable,approval_id,approval_status,created_at,changed_at,creator_id,changed_by_user_name,user_email,task_color,project_color,manager_id,manager_name,todo_id,todo_name,cost_rate,cost_amount,billable_tax_rate,billable_tax_amount,billable_net_amount,margin_amount,breaks_total,break_intervals,external_ref,custom_fields] -[value_honorary_hour,value_honorary_total] ~[]
+  body +[time_start,stopwatch_date_start] -[] ~[]
+## POST /time-entries/:timeEntryId/stop 
+  res +[rate_hour,rate_total,has_overtime,overtime,regular_time,start_stopwatch,is_editable,approval_id,approval_status,created_at,changed_at,creator_id,changed_by_user_name,user_email,task_color,project_color,manager_id,manager_name,todo_id,todo_name,cost_rate,cost_amount,billable_tax_rate,billable_tax_amount,billable_net_amount,margin_amount,breaks_total,break_intervals,external_ref,custom_fields] -[value_honorary_hour,value_honorary_total] ~[]
+  body +[time_total] -[] ~[]
+## GET /reports/detailed 
+  res +[is_editable,approval_id,approval_status,regular_time,has_overtime,overtime,breaks_total,break_intervals,task_color,project_color,manager_id,manager_name] -[] ~[is_invoiced:boolean->integer; todo_id:integer->string]
+  query +[is_invoiced,only_active_users,only_active_projects,only_projects_member_of,project_privacy,description,manager_id,manager_empty,task_empty,customer_empty,todo_id,todo_id_empty,is_stopwatch_active,include_unregistered_projects,custom_fields.{id}] -[]
+## GET /reports/summary-groups 
+  query +[capacity_filter_type,capacity_filter_scope,capacity_filter_value] -[]

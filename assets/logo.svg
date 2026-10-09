@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Rabbitwork">
+  <!-- PLACEHOLDER logo: replace with the official Rabbitwork brand asset before submission. -->
+  <rect width="256" height="256" rx="56" fill="#1F2937"/>
+  <circle cx="128" cy="140" r="64" fill="none" stroke="#F9FAFB" stroke-width="14"/>
+  <path d="M128 140 L128 100 M128 140 L156 156" stroke="#F9FAFB" stroke-width="14" stroke-linecap="round"/>
+  <path d="M100 66 Q92 26 108 22 Q122 26 116 70 M156 66 Q164 26 148 22 Q134 26 140 70" fill="#F9FAFB"/>
+</svg>

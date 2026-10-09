@@ -1,0 +1,17 @@
+# dependencies / tooling (the plugin itself has none)
+node_modules/
+# local env and secrets — never commit tokens
+.env
+.env.*
+*.pem
+*.key
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# logs and scratch
+*.log
+npm-debug.log*
+tmp/
+coverage/

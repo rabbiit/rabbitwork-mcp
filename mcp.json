@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "rabbitwork": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "server/index.mjs"
+      ],
+      "cwd": "./",
+      "env": {
+        "RABBITWORK_API_TOKEN": "${RABBITWORK_API_TOKEN}",
+        "RABBITWORK_API_BASE_URL": "${RABBITWORK_API_BASE_URL}"
+      }
+    }
+  }
+}
