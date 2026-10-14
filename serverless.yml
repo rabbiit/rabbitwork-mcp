@@ -49,6 +49,9 @@ functions:
           path: /.well-known/oauth-authorization-server
           method: get
       - httpApi:
+          path: /oauth-logo.svg
+          method: get
+      - httpApi:
           path: /authorize
           method: get
       - httpApi:

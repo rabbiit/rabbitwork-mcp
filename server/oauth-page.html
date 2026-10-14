@@ -11,29 +11,42 @@
             min-height: 100vh;
             display: grid;
             place-items: center;
-            background: #f4f1ea;
-            color: #1c1915;
+            background: #f2f6fd;
+            color: #10283c;
             font: 16px/1.45 system-ui, sans-serif;
         }
 
         main {
             width: min(440px, calc(100% - 32px));
             background: #fff;
-            border: 1px solid #e4ddd2;
-            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
             padding: 28px 24px;
-            box-shadow: 0 12px 40px rgba(40, 30, 10, 0.06);
+            box-shadow: 0 12px 40px rgba(16, 40, 60, 0.06);
+        }
+
+        .brand {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .logo {
+            display: block;
+            width: min(240px, 100%);
+            height: auto;
         }
 
         h1 {
             font-size: 22px;
             line-height: 1.25;
             margin: 0 0 8px;
+            text-align: center;
         }
 
         p {
             margin: 0 0 14px;
-            color: #4d463d;
+            color: #4b5563;
         }
 
         label {
@@ -48,7 +61,12 @@
             font: inherit;
             padding: 12px;
             border-radius: 10px;
-            border: 1px solid #d9d0c3;
+            border: 1px solid #d1d5db;
+        }
+
+        input[type="password"]:focus {
+            outline: 2px solid rgb(7, 95, 227);
+            border-color: transparent;
         }
 
         .error {
@@ -63,39 +81,50 @@
             margin-top: 16px;
             width: 100%;
             border: 0;
-            border-radius: 10px;
-            padding: 12px 14px;
-            background: #1f6b4a;
+            border-radius: 25px;
+            padding: 14px 18px;
+            background: rgb(7, 95, 227);
             color: #fff;
-            font-weight: 700;
+            font-size: 18px;
+            font-weight: 600;
             cursor: pointer;
+        }
+
+        button:hover {
+            background: rgb(6, 78, 186);
+        }
+
+        a {
+            color: rgb(7, 95, 227);
         }
 
         .cancel {
             display: block;
             text-align: center;
             margin-top: 12px;
-            color: #5c564e;
         }
     </style>
 </head>
 <body>
 <main>
+    <div class="brand">
+        <img class="logo" src="/oauth-logo.svg" alt="Rabbitwork">
+    </div>
     <h1>{{title}}</h1>
-    {{inner}}
+    <p class="message" {{messageAttrs}}>{{message}}</p>
+    <p class="error" {{alertAttrs}}>{{alert}}</p>
+    <div {{formAttrs}}>
+        <p><strong>{{clientName}}</strong> will access Rabbitwork with the permissions of the token you paste. Create the token in Settings &gt; You &gt; My tokens. <a href="https://www.rabbiit.com/help/how-to-use-the-api-and-access-tokens" target="_blank" rel="noopener noreferrer">How to create a token</a>.</p>
+        <p>You will then return to <strong>{{host}}</strong>.</p>
+        <p {{localAttrs}}>The return address is on this computer. Confirm that you started this connection.</p>
+        <form method="post" action="/authorize" autocomplete="off">
+            {{fields}}
+            <label for="token">Personal token</label>
+            <input id="token" name="token" type="password" maxlength="512" required spellcheck="false" autocomplete="off">
+            <button type="submit">Connect</button>
+        </form>
+        <p><a class="cancel" href="{{cancel}}">Cancel</a></p>
+    </div>
 </main>
 </body>
 </html>
-<!-- form -->
-{{alert}}
-<p><strong>{{clientName}}</strong> will access Rabbitwork with the permissions of the token you paste. Create the token
-    in Settings &gt; You &gt; My tokens.</p>
-<p>You will then return to <strong>{{host}}</strong>.</p>
-{{local}}
-<form method="post" action="/authorize" autocomplete="off">
-    {{fields}}
-    <label for="token">Personal token</label>
-    <input id="token" name="token" type="password" maxlength="512" required spellcheck="false" autocomplete="off">
-    <button type="submit">Connect</button>
-</form>
-<p><a class="cancel" href="{{cancel}}">Cancel</a></p>

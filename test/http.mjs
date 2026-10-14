@@ -317,6 +317,14 @@ await t('oauth code exchange stores the personal token inside the bearer', async
     });
     assert.equal(page.statusCode, 200);
     assert.match(page.body, /Personal token/);
+    assert.match(page.body, /https:\/\/www\.rabbiit\.com\/help\/how-to-use-the-api-and-access-tokens/);
+    assert.match(page.body, /src="\/oauth-logo.svg"/);
+    assert.match(page.body, /alt="Rabbitwork"/);
+    assert.match(page.body, /rgb\(7, 95, 227\)/);
+    const logo = await handleHttpRequest({method: 'GET', path: '/oauth-logo.svg', headers: originHeaders(), body: ''});
+    assert.equal(logo.statusCode, 200);
+    assert.match(logo.headers['content-type'], /image\/svg\+xml/);
+    assert.match(logo.body, /viewBox="0 0 290 56"/);
     assert.match(page.body, /claude\.ai/);
     assert.doesNotMatch(page.body, /persona-tok-1/);
 
@@ -558,6 +566,10 @@ await t('Lambda passes the authorize query string and serves discovery', async (
     });
     assert.equal(page.statusCode, 200);
     assert.match(page.body, /Personal token/);
+    assert.match(page.body, /https:\/\/www\.rabbiit\.com\/help\/how-to-use-the-api-and-access-tokens/);
+    assert.match(page.body, /src="\/oauth-logo.svg"/);
+    assert.match(page.body, /alt="Rabbitwork"/);
+    assert.match(page.body, /rgb\(7, 95, 227\)/);
     const meta = await handler({
         requestContext: {http: {method: 'GET'}},
         rawPath: '/.well-known/oauth-authorization-server',

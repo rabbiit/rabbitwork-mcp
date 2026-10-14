@@ -7,6 +7,7 @@ const OAUTH_PATHS = new Set([
     '/.well-known/oauth-protected-resource/mcp',
     '/.well-known/oauth-authorization-server',
     '/authorize',
+    '/oauth-logo.svg',
     '/token',
 ]);
 

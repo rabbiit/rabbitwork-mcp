@@ -5,12 +5,9 @@ import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {isLoopbackHost} from './http-util.mjs';
 
-const [pageTemplate, formTemplate] = readFileSync(
-    join(dirname(fileURLToPath(import.meta.url)), 'oauth-page.html'),
-    'utf8',
-).split(/\r?\n<!-- form -->\r?\n/);
-
-if (!formTemplate) throw new Error('oauth-page.html is missing the form template');
+const pageDir = dirname(fileURLToPath(import.meta.url));
+const logo = readFileSync(join(pageDir, 'oauth-logo.svg'), 'utf8');
+const pageTemplate = readFileSync(join(pageDir, 'oauth-page.html'), 'utf8');
 
 function esc(value) {
     return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
@@ -25,7 +22,7 @@ function fill(template, values) {
     });
 }
 
-export function htmlResponse(statusCode, title, inner) {
+function pageResponse(statusCode, values) {
     return {
         statusCode,
         headers: {
@@ -33,9 +30,33 @@ export function htmlResponse(statusCode, title, inner) {
             'cache-control': 'no-store',
             'referrer-policy': 'no-referrer',
             'x-frame-options': 'DENY',
-            'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'",
+            'content-security-policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'",
         },
-        body: fill(pageTemplate, {title: esc(title), inner}),
+        body: fill(pageTemplate, values),
+    };
+}
+
+export function htmlResponse(statusCode, title, message) {
+    return pageResponse(statusCode, {
+        title: esc(title),
+        messageAttrs: '',
+        message: esc(message),
+        alertAttrs: 'hidden',
+        alert: '',
+        formAttrs: 'hidden',
+        clientName: '',
+        host: '',
+        localAttrs: 'hidden',
+        fields: '',
+        cancel: '',
+    });
+}
+
+export function logoResponse() {
+    return {
+        statusCode: 200,
+        headers: {'content-type': 'image/svg+xml', 'cache-control': 'public, max-age=86400'},
+        body: logo,
     };
 }
 
@@ -67,13 +88,17 @@ export function authorizeForm({clientName, redirectUri, fields, message}) {
             return false;
         }
     })();
-    const inner = fill(formTemplate, {
-        alert: message ? `<p class="error">${esc(message)}</p>` : '',
+    return pageResponse(message ? 400 : 200, {
+        title: esc('Connect Rabbitwork'),
+        messageAttrs: 'hidden',
+        message: '',
+        alertAttrs: message ? '' : 'hidden',
+        alert: esc(message),
+        formAttrs: '',
         clientName: esc(clientName),
         host: esc(host),
-        local: loop ? '<p>The return address is on this computer. Confirm that you started this connection.</p>' : '',
+        localAttrs: loop ? '' : 'hidden',
         fields: fields.map(([name, value]) => hidden(name, value)).join(''),
         cancel: esc(cancelHref(redirectUri, fields)),
     });
-    return htmlResponse(message ? 400 : 200, 'Connect Rabbitwork', inner);
 }

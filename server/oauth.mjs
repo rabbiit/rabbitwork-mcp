@@ -6,7 +6,7 @@ import {createHash, timingSafeEqual} from 'node:crypto';
 import {DEFAULT_BASE_URL, USER_AGENT, env} from './lib.mjs';
 import {isLoopbackHost, jsonResponse as respondJson, normalizeHeaders} from './http-util.mjs';
 import {credentialFromHeader, oauthNow, oauthReady, openSeal, seal, setOauthClock} from './oauth-seal.mjs';
-import {authorizeForm, htmlResponse} from './oauth-page.mjs';
+import {authorizeForm, htmlResponse, logoResponse} from './oauth-page.mjs';
 import {TRUSTED_OAUTH_CLIENT_HOSTS} from './trusted-oauth-clients.mjs';
 
 export {credentialFromHeader, setOauthClock};
@@ -191,17 +191,17 @@ async function resolveClient(params) {
     const redirectUri = limited(params.redirect_uri, 512);
     const state = limited(params.state, 512);
     if (!clientIdUrl(clientId) || !acceptableRedirect(redirectUri) || !state) {
-        return {error: htmlResponse(400, 'Connection refused', '<p>The app that asked for access was not recognized.</p>')};
+        return {error: htmlResponse(400, 'Connection refused', 'The app that asked for access was not recognized.')};
     }
     let doc;
     try {
         doc = await loadClient(clientId);
     } catch {
-        return {error: htmlResponse(400, 'Connection refused', '<p>The app could not be confirmed. Try connecting again.</p>')};
+        return {error: htmlResponse(400, 'Connection refused', 'The app could not be confirmed. Try connecting again.')};
     }
     const allowed = doc.redirect_uris.some((item) => typeof item === 'string' && redirectsMatch(item, redirectUri));
     if (!allowed) {
-        return {error: htmlResponse(400, 'Connection refused', '<p>That app\'s return address is not allowed.</p>')};
+        return {error: htmlResponse(400, 'Connection refused', 'That app\'s return address is not allowed.')};
     }
     return {clientId, redirectUri, state, clientName: String(doc.client_name || 'aplicativo').slice(0, 80)};
 }
@@ -261,7 +261,7 @@ function issuePair(personalToken, clientId) {
 
 async function handleAuthorize(method, rawPath, body, origin) {
     if (!oauthReady()) {
-        return htmlResponse(500, 'Connection unavailable', '<p>The server does not have the OAuth key configured yet.</p>');
+        return htmlResponse(500, 'Connection unavailable', 'The server does not have the OAuth key configured yet.');
     }
     const params = method === 'POST' ? formOf(body) : queryOf(rawPath);
     const client = await resolveClient(params);
@@ -273,7 +273,7 @@ async function handleAuthorize(method, rawPath, body, origin) {
     if (method === 'GET') {
         return authorizeForm({clientName: client.clientName, redirectUri: client.redirectUri, fields});
     }
-    if (method !== 'POST') return htmlResponse(405, 'Invalid method', '<p>Use the Connect button.</p>');
+    if (method !== 'POST') return htmlResponse(405, 'Invalid method', 'Use the Connect button.');
     const token = String(params.token || '').trim();
     if (!token || token.length > 512 || /\s/.test(token)) {
         return authorizeForm({
@@ -306,7 +306,7 @@ async function handleAuthorize(method, rawPath, body, origin) {
             exp: Math.floor((oauthNow() + CODE_TTL_MS) / 1000),
         });
     } catch {
-        return htmlResponse(500, 'Connection unavailable', '<p>The server does not have the OAuth key configured yet.</p>');
+        return htmlResponse(500, 'Connection unavailable', 'The server does not have the OAuth key configured yet.');
     }
     return redirectBack(client.redirectUri, {code, state: client.state, iss: origin});
 }
@@ -359,6 +359,10 @@ export async function handleOAuthRequest({method, pathname, rawPath, body, origi
     if (pathname === '/.well-known/oauth-authorization-server') {
         if (method !== 'GET') return jsonResponse(405, {message: 'Method not allowed'});
         return jsonResponse(200, authorizationServerMetadata(origin), {'cache-control': 'public, max-age=300'});
+    }
+    if (pathname === '/oauth-logo.svg') {
+        if (method !== 'GET') return jsonResponse(405, {message: 'Method not allowed'});
+        return logoResponse();
     }
     if (pathname === '/authorize') return handleAuthorize(method, rawPath, body, origin);
     if (pathname === '/token') {
