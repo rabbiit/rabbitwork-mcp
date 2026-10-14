@@ -2,6 +2,7 @@
 // Copie http/http-client.example.env.json para http/http-client.private.env.json
 // e preencha host e token. Esse arquivo fica fora do git.
 // O servidor precisa estar no ar: node server/http.mjs
+// O OAuth está em http/oauth.http.
 //
 // Para usar um projeto ou cliente que já existe em todos os pedidos, descomente a linha correspondente.
 // Se ficarem comentadas, "Criar cliente" e "Criar projeto" gravam os ids e o restante usa esses valores.
@@ -35,13 +36,13 @@
 // "Criar apontamento" grava o id e "Editar" e "Iniciar cronômetro" reutilizam esse id.
 // "Iniciar cronômetro" grava o id do cronômetro ativo; "Pausar" e "Apagar apontamento do cronômetro" usam esse id.
 
-
 ### Saúde
 GET {{host}}/health
 
 ### Initialize
 POST {{host}}/mcp
 Content-Type: application/json
+x-api-token: {{token}}
 
 {
   "jsonrpc": "2.0",
@@ -56,6 +57,7 @@ Content-Type: application/json
 ### Lista de ferramentas
 POST {{host}}/mcp
 Content-Type: application/json
+x-api-token: {{token}}
 
 {
   "jsonrpc": "2.0",

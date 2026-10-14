@@ -1,0 +1,151 @@
+// PhpStorm HTTP Client. Na seta do pedido, escolha o ambiente que você configurou.
+// Usa o mesmo http/http-client.private.env.json do mcp.http (host e token).
+// O servidor precisa estar no ar: node server/http.mjs
+// O .env local também precisa de RABBITWORK_OAUTH_SECRET (16 caracteres ou mais).
+// Rode de cima para baixo: "Autorizar" grava o code e "Trocar code" grava o access token.
+//
+// Par PKCE fixo para o teste local. Não troque só um dos dois.
+@oauthClientId = https://claude.ai/oauth/mcp-oauth-client-metadata
+@oauthRedirect = https://claude.ai/api/mcp/auth_callback
+@oauthChallenge = ZjUu0NbNPAeDPXLPNkXN2cRLYcjEzLS2fMtUsxQZVpU
+@oauthVerifier = Quf5xFwmTXPtO0NIJyUqDZyY2eAoJHWIPiuunJlrCNc
+@oauthState = local
+
+### OAuth: recurso protegido
+GET {{host}}/.well-known/oauth-protected-resource/mcp
+
+> {%
+client.test("recurso aponta para /mcp", function() {
+  var expected = request.environment.get("host") + "/mcp";
+  client.assert(response.status === 200, "esperava 200, veio " + response.status);
+  client.assert(response.body && response.body.resource === expected, JSON.stringify(response.body));
+});
+%}
+
+### OAuth: servidor de autorização
+GET {{host}}/.well-known/oauth-authorization-server
+
+> {%
+client.test("PKCE S256 anunciado", function() {
+  var methods = (response.body && response.body.code_challenge_methods_supported) || [];
+  client.assert(response.status === 200, "esperava 200, veio " + response.status);
+  client.assert(methods.indexOf("S256") !== -1, JSON.stringify(response.body));
+});
+%}
+
+### OAuth: MCP sem credencial
+POST {{host}}/mcp
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {}
+}
+
+> {%
+client.test("sem credencial pede OAuth", function() {
+  var header = response.headers.valueOf("WWW-Authenticate") || "";
+  client.assert(response.status === 401, "esperava 401, veio " + response.status);
+  client.assert(header.indexOf("oauth-protected-resource") !== -1, header || "sem WWW-Authenticate");
+});
+%}
+
+### OAuth: página de autorização
+GET {{host}}/authorize
+    ?response_type=code
+    &client_id={{oauthClientId}}
+    &redirect_uri={{oauthRedirect}}
+    &code_challenge={{oauthChallenge}}
+    &code_challenge_method=S256
+    &state={{oauthState}}
+    &resource={{host}}/mcp
+    &scope=rabbitwork
+
+> {%
+client.test("página pede o token pessoal", function() {
+  client.assert(response.status === 200, "esperava 200, veio " + response.status);
+  client.assert(String(response.body).indexOf("Token pessoal") !== -1, "página sem o campo do token");
+});
+%}
+
+### OAuth: autorizar
+// Não segue o redirect: o code fica no Location e é gravado para o pedido seguinte.
+# @no-redirect
+POST {{host}}/authorize
+Content-Type: application/x-www-form-urlencoded
+
+response_type = code &
+client_id = {{oauthClientId}} &
+redirect_uri = {{oauthRedirect}} &
+code_challenge = {{oauthChallenge}} &
+code_challenge_method = S256 &
+state = {{oauthState}} &
+resource = {{host}}/mcp &
+scope = rabbitwork &
+token = {{token}}
+
+> {%
+var location = response.headers.valueOf("Location") || "";
+var match = /[?&]code=([^&]+)/.exec(location);
+var code = match ? decodeURIComponent(match[1]) : "";
+if (!code) {
+  client.log(location || "Resposta sem Location");
+} else {
+  client.global.set("oauthCode", code);
+  client.log("oauthCode guardado");
+}
+client.test("autorização devolveu o code", function() {
+  client.assert(response.status === 302, "esperava 302, veio " + response.status);
+  client.assert(code, "Location sem code");
+});
+%}
+
+### OAuth: trocar code pelo access token
+POST {{host}}/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = authorization_code &
+code = {{oauthCode}} &
+client_id = {{oauthClientId}} &
+redirect_uri = {{oauthRedirect}} &
+code_verifier = {{oauthVerifier}} &
+resource = {{host}}/mcp
+
+> {%
+var access = response.body && response.body.access_token;
+var refresh = response.body && response.body.refresh_token;
+if (!access) {
+  client.log(JSON.stringify(response.body));
+} else {
+  client.global.set("oauthAccessToken", access);
+  if (refresh) client.global.set("oauthRefreshToken", refresh);
+  client.log("oauthAccessToken guardado");
+}
+client.test("access token emitido", function() {
+  client.assert(response.status === 200, "esperava 200, veio " + response.status);
+  client.assert(access, "resposta sem access_token");
+});
+%}
+
+### OAuth: lista de ferramentas com o access token
+POST {{host}}/mcp
+Authorization: Bearer {{oauthAccessToken}}
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list",
+  "params": {}
+}
+
+> {%
+var result = response.body.result || {};
+client.test("lista autenticada pelo OAuth", function() {
+  client.assert(response.status === 200, "esperava 200, veio " + response.status);
+  client.assert(!result.isError, (result.content && result.content[0] && result.content[0].text) || "erro na lista");
+  client.assert(result.tools && result.tools.length > 0, "lista vazia");
+});
+%}

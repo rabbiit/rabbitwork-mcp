@@ -1,0 +1,17 @@
+---
+description: Indent JavaScript, HTML and CSS with four spaces, matching server/build.mjs
+alwaysApply: true
+---
+
+# Indentation
+
+`server/build.mjs` is the formatting reference. JavaScript, HTML and CSS use four spaces. Do not use two spaces in those files.
+
+```javascript
+export function autoOp(r) {
+    if (r.method === 'GET') return 'read';
+    return r.body ? 'create' : 'action';
+}
+```
+
+When editing a file that still uses two spaces, convert that whole file to four spaces in the same change so the file does not mix both widths. Leave JSON at its current width. Do not reformat files you are not already changing.

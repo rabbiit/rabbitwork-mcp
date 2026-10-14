@@ -4,7 +4,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const spec = JSON.parse(readFileSync(process.argv[2] || 'spec/openapi.en.json', 'utf8'));
-let ptSpec = null; // pt-BR summaries/tags (used in the pt-BR approval card), optional
+let ptSpec = null; // optional pt-BR summaries/tags stored beside the English route text
 try { ptSpec = JSON.parse(readFileSync('spec/openapi.pt.json', 'utf8')); } catch {}
 const deref = (o, d = 0) => {
   if (d > 12 || !o || typeof o !== 'object') return o;

@@ -13,6 +13,7 @@ provider:
   environment:
     RABBITWORK_API_BASE_URL: ${ssm:/rabbit-mcp/${self:provider.stage}/api-base-url, 'https://app.rabbiit.com/api/v1'}
     RABBITWORK_MCP_DOMAIN: ${ssm:/rabbit-mcp/${self:provider.stage}/mcp-domain, 'mcp.rabbitwork.io'}
+    RABBITWORK_OAUTH_SECRET: ${ssm:/rabbit-mcp/${self:provider.stage}/oauth-secret}
 
 custom:
   customDomain:
@@ -38,6 +39,24 @@ functions:
       - httpApi:
           path: /health
           method: get
+      - httpApi:
+          path: /.well-known/oauth-protected-resource
+          method: get
+      - httpApi:
+          path: /.well-known/oauth-protected-resource/mcp
+          method: get
+      - httpApi:
+          path: /.well-known/oauth-authorization-server
+          method: get
+      - httpApi:
+          path: /authorize
+          method: get
+      - httpApi:
+          path: /authorize
+          method: post
+      - httpApi:
+          path: /token
+          method: post
 
 package:
   patterns:

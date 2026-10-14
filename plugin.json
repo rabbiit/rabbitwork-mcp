@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "rabbitwork",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Rabbitwork (formerly Rabbiit) time tracking for AI agents: log and review hours, run the stopwatch, reports, timesheet approvals, projects, members, to-dos, customers, users, teams, custom fields, rates, calendars and webhooks — 133 tools covering the whole official API v1. Lists return active items by default; deletes require an approval card (or confirm: true).",
   "author": {
     "name": "Dyorg Almeida",

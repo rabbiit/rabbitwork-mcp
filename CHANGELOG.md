@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0
+
+- Remote MCP accepts OAuth 2.1 (authorization code + PKCE) so ChatGPT and Claude can connect with a Rabbitwork personal token. Direct `x-api-token` and Bearer requests still work.
+
 ## 1.0.0 — first public release
 
 - Covers all 129 non-deprecated routes of the Rabbitwork API v1 (133 tools).
