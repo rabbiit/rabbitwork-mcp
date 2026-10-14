@@ -1,10 +1,39 @@
-// PhpStorm HTTP Client. Na seta do pedido, escolha o ambiente "local".
-// O token fica em http/http-client.private.env.json (não entra no git).
+// PhpStorm HTTP Client. Na seta do pedido, escolha o ambiente que você configurou.
+// Copie http/http-client.example.env.json para http/http-client.private.env.json
+// e preencha host e token. Esse arquivo fica fora do git.
 // O servidor precisa estar no ar: node server/http.mjs
 //
-// Troque estes IDs pelos da sua conta antes de disparar escritas ou exclusões.
-@projectId = 1
-@timeEntryId = 1
+// Para usar um projeto ou cliente que já existe em todos os pedidos, descomente a linha correspondente.
+// Se ficarem comentadas, "Criar cliente" e "Criar projeto" gravam os ids e o restante usa esses valores.
+// @projectId = 1
+// @customerId = 1
+// Cada pedido que envia parâmetro tem as linhas # @... comentadas. Descomente só ali para trocar o valor daquele pedido.
+// Os valores abaixo valem enquanto a linha do pedido estiver comentada.
+@customerCreateName = Cliente HTTP Client
+@projectCreateName = Projeto HTTP Client
+// O pedido acrescenta um sufixo aleatório ao nome. Cliente e projeto não podem repetir o nome.
+@projectCreatePrivacy = 1
+@projectListActive = false
+@timeEntryListFrom = 2026-10-06
+@timeEntryListTo = 2026-10-12
+@detailedReportDateExecutionStart = 2026-10-06
+@detailedReportDateExecutionEnd = 2026-10-12
+@summaryReportDateExecutionStart = 2026-10-06
+@summaryReportDateExecutionEnd = 2026-10-12
+@timeEntryCreateDateExecution = 2026-10-14
+@timeEntryCreateTimeTotal = 01:00:00
+@timeEntryCreateDescription = Exemplo via HTTP Client
+@timeEntryEditDescription = Descrição alterada pelo exemplo...
+@stopwatchTimeEntryDeleteConfirm = true
+@stopwatchTimeEntryDeleteReason = Exemplo do HTTP Client
+@projectDeleteConfirm = true
+@projectDeleteReason = Exemplo do HTTP Client
+@customerDeleteConfirm = true
+@customerDeleteReason = Exemplo do HTTP Client
+@timesheetSubmitPeriodStart = 2026-10-05
+@timesheetSubmitPeriodEnd = 2026-10-11
+// "Criar apontamento" grava o id e "Editar" e "Iniciar cronômetro" reutilizam esse id.
+// "Iniciar cronômetro" grava o id do cronômetro ativo; "Pausar" e "Apagar apontamento do cronômetro" usam esse id.
 
 
 ### Saúde
@@ -35,6 +64,61 @@ Content-Type: application/json
   "params": {}
 }
 
+### Criar cliente (escreve na conta; grava o id quando @customerId não está definido no topo)
+# @customerCreateName=Cliente HTTP Client
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 24,
+  "method": "tools/call",
+  "params": {
+    "name": "create_customer",
+    "arguments": {
+      "name": "{{customerCreateName}}-{{$random.alphanumeric(6)}}"
+    }
+  }
+}
+
+> {%
+var result = response.body.result || {};
+var errorText = result.content && result.content[0] && result.content[0].text;
+var structured = result.structuredContent && result.structuredContent.item;
+var parsed = {};
+if (!result.isError && !structured && errorText) {
+  try { parsed = JSON.parse(errorText); } catch (e) { parsed = {}; }
+}
+var item = result.isError ? null : (structured || parsed.item);
+var id = item && item.id;
+if (result.isError || id == null || id === "") {
+  client.log(errorText || "Criação de cliente sem id. Nada foi guardado.");
+} else {
+  client.global.set("customerId", String(id));
+  client.log("customerId guardado: " + id);
+}
+client.test("cliente criado", function() {
+  client.assert(!result.isError, errorText || "A ferramenta retornou erro");
+  client.assert(id != null && id !== "", "Resposta sem id de cliente");
+});
+%}
+
+### Clientes ativos
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "method": "tools/call",
+  "params": {
+    "name": "list_customers",
+    "arguments": {}
+  }
+}
+
 ### Listar projetos
 POST {{host}}/mcp
 Content-Type: application/json
@@ -50,7 +134,52 @@ x-api-token: {{token}}
   }
 }
 
+### Criar projeto (escreve na conta; grava o id quando @projectId não está definido no topo)
+# @customerId=1
+# @projectCreateName=Projeto HTTP Client
+# @projectCreatePrivacy=1
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 22,
+  "method": "tools/call",
+  "params": {
+    "name": "create_project",
+    "arguments": {
+      "name": "{{projectCreateName}}-{{$random.alphanumeric(6)}}",
+      "customer_id": {{customerId}},
+      "privacy": {{projectCreatePrivacy}}
+    }
+  }
+}
+
+> {%
+var result = response.body.result || {};
+var errorText = result.content && result.content[0] && result.content[0].text;
+var structured = result.structuredContent && result.structuredContent.item;
+var parsed = {};
+if (!result.isError && !structured && errorText) {
+  try { parsed = JSON.parse(errorText); } catch (e) { parsed = {}; }
+}
+var item = result.isError ? null : (structured || parsed.item);
+var id = item && item.id;
+if (result.isError || id == null || id === "") {
+  client.log(errorText || "Criação de projeto sem id. Nada foi guardado.");
+} else {
+  client.global.set("projectId", String(id));
+  client.log("projectId guardado: " + id);
+}
+client.test("projeto criado", function() {
+  client.assert(!result.isError, errorText || "A ferramenta retornou erro");
+  client.assert(id != null && id !== "", "Resposta sem id de projeto");
+});
+%}
+
 ### Um projeto
+# @projectId=1
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -68,6 +197,7 @@ x-api-token: {{token}}
 }
 
 ### Projetos arquivados
+# @projectListActive=false
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -79,27 +209,15 @@ x-api-token: {{token}}
   "params": {
     "name": "list_projects",
     "arguments": {
-      "active": false
+      "active": {{projectListActive}}
     }
   }
 }
 
-### Cronômetro atual
-POST {{host}}/mcp
-Content-Type: application/json
-x-api-token: {{token}}
-
-{
-  "jsonrpc": "2.0",
-  "id": 6,
-  "method": "tools/call",
-  "params": {
-    "name": "get_current_timer",
-    "arguments": {}
-  }
-}
-
 ### Horas no período
+# @projectId=1
+# @timeEntryListFrom=2026-10-06
+# @timeEntryListTo=2026-10-12
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -111,14 +229,16 @@ x-api-token: {{token}}
   "params": {
     "name": "list_time_entries",
     "arguments": {
-      "from": "2026-10-06",
-      "to": "2026-10-12",
+      "from": "{{timeEntryListFrom}}",
+      "to": "{{timeEntryListTo}}",
       "project": {{projectId}}
     }
   }
 }
 
 ### Relatório detalhado
+# @detailedReportDateExecutionStart=2026-10-06
+# @detailedReportDateExecutionEnd=2026-10-12
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -130,13 +250,15 @@ x-api-token: {{token}}
   "params": {
     "name": "get_detailed_report",
     "arguments": {
-      "date_execution_start": "2026-10-06",
-      "date_execution_end": "2026-10-12"
+      "date_execution_start": "{{detailedReportDateExecutionStart}}",
+      "date_execution_end": "{{detailedReportDateExecutionEnd}}"
     }
   }
 }
 
 ### Relatório resumido
+# @summaryReportDateExecutionStart=2026-10-06
+# @summaryReportDateExecutionEnd=2026-10-12
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -148,24 +270,9 @@ x-api-token: {{token}}
   "params": {
     "name": "get_summary_report",
     "arguments": {
-      "date_execution_start": "2026-10-06",
-      "date_execution_end": "2026-10-12"
+      "date_execution_start": "{{summaryReportDateExecutionStart}}",
+      "date_execution_end": "{{summaryReportDateExecutionEnd}}"
     }
-  }
-}
-
-### Clientes ativos
-POST {{host}}/mcp
-Content-Type: application/json
-x-api-token: {{token}}
-
-{
-  "jsonrpc": "2.0",
-  "id": 10,
-  "method": "tools/call",
-  "params": {
-    "name": "list_customers",
-    "arguments": {}
   }
 }
 
@@ -185,6 +292,7 @@ x-api-token: {{token}}
 }
 
 ### To-dos
+# @projectId=1
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -232,6 +340,10 @@ x-api-token: {{token}}
 }
 
 ### Criar apontamento (escreve na conta)
+# @projectId=1
+# @timeEntryCreateDateExecution=2026-10-14
+# @timeEntryCreateTimeTotal=01:00:00
+# @timeEntryCreateDescription=Exemplo via HTTP Client
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -244,15 +356,38 @@ x-api-token: {{token}}
     "name": "create_time_entry",
     "arguments": {
       "project_id": {{projectId}},
-      "date_execution": "2026-10-14",
-      "time_total": "01:00:00",
-      "description": "Exemplo via HTTP Client"
+      "date_execution": "{{timeEntryCreateDateExecution}}",
+      "time_total": "{{timeEntryCreateTimeTotal}}",
+      "description": "{{timeEntryCreateDescription}}"
     }
   }
 }
 
-### Editar apontamento (só os campos enviados)
-@EditTimeEntryId = 856
+> {%
+var result = response.body.result || {};
+var errorText = result.content && result.content[0] && result.content[0].text;
+var structured = result.structuredContent && result.structuredContent.item;
+var parsed = {};
+if (!result.isError && !structured && errorText) {
+  try { parsed = JSON.parse(errorText); } catch (e) { parsed = {}; }
+}
+var item = result.isError ? null : (structured || parsed.item);
+var id = item && item.id;
+if (result.isError || id == null || id === "") {
+  client.log(errorText || "Criação sem id. Nada foi guardado.");
+} else {
+  client.global.set("timeEntryId", String(id));
+  client.log("timeEntryId guardado: " + id);
+}
+client.test("apontamento criado", function() {
+  client.assert(!result.isError, errorText || "A ferramenta retornou erro");
+  client.assert(id != null && id !== "", "Resposta sem id de apontamento");
+});
+%}
+
+### Editar apontamento (só os campos enviados; usa o id criado acima)
+# @timeEntryId=1
+# @timeEntryEditDescription=Descrição alterada pelo exemplo...
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -264,33 +399,14 @@ x-api-token: {{token}}
   "params": {
     "name": "update_time_entry",
     "arguments": {
-      "timeEntryId": {{EditTimeEntryId}},
-      "description": "Descrição alterada pelo exemplo..."
+      "timeEntryId": {{timeEntryId}},
+      "description": "{{timeEntryEditDescription}}"
     }
   }
 }
 
-### Apagar apontamento (destrutivo; confirm é obrigatório neste HTTP)
-@DeleteTimeEntryId = 856
-POST {{host}}/mcp
-Content-Type: application/json
-x-api-token: {{token}}
-
-{
-  "jsonrpc": "2.0",
-  "id": 19,
-  "method": "tools/call",
-  "params": {
-    "name": "delete_time_entry",
-    "arguments": {
-      "timeEntryId": {{DeleteTimeEntryId}},
-      "confirm": true,
-      "reason": "Exemplo do HTTP Client"
-    }
-  }
-}
-
-### Iniciar cronômetro (escreve na conta)
+### Iniciar cronômetro (escreve na conta; grava o id do cronômetro ativo)
+# @timeEntryId=1
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -307,7 +423,96 @@ x-api-token: {{token}}
   }
 }
 
+> {%
+var result = response.body.result || {};
+var errorText = result.content && result.content[0] && result.content[0].text;
+var structured = result.structuredContent && result.structuredContent.item;
+var parsed = {};
+if (!result.isError && !structured && errorText) {
+  try { parsed = JSON.parse(errorText); } catch (e) { parsed = {}; }
+}
+var item = result.isError ? null : (structured || parsed.item);
+var id = item && item.id;
+if (result.isError || id == null || id === "") {
+  client.log(errorText || "Cronômetro sem id. Nada foi guardado.");
+} else {
+  client.global.set("stopwatchId", String(id));
+  client.log("stopwatchId guardado: " + id);
+}
+client.test("cronômetro iniciado", function() {
+  client.assert(!result.isError, errorText || "A ferramenta retornou erro");
+  client.assert(id != null && id !== "", "Resposta sem id de cronômetro");
+});
+%}
+
+### Cronômetro atual
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "method": "tools/call",
+  "params": {
+    "name": "get_current_timer",
+    "arguments": {}
+  }
+}
+
+### Pausar cronômetro (usa o id do cronômetro ativo)
+# @stopwatchId=1
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 20,
+  "method": "tools/call",
+  "params": {
+    "name": "stop_stopwatch",
+    "arguments": {
+      "timeEntryId": {{stopwatchId}}
+    }
+  }
+}
+
+### Apagar apontamento do cronômetro (destrutivo; usa o id do cronômetro ativo)
+# @stopwatchId=1
+# @stopwatchTimeEntryDeleteConfirm=true
+# @stopwatchTimeEntryDeleteReason=Exemplo do HTTP Client
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 21,
+  "method": "tools/call",
+  "params": {
+    "name": "delete_time_entry",
+    "arguments": {
+      "timeEntryId": {{stopwatchId}},
+      "confirm": {{stopwatchTimeEntryDeleteConfirm}},
+      "reason": "{{stopwatchTimeEntryDeleteReason}}"
+    }
+  }
+}
+
+> {%
+var result = response.body.result || {};
+var errorText = (result.content && result.content[0] && result.content[0].text) || "";
+var missingConfirm = result.isError && /confirm:\s*true/.test(errorText);
+if (missingConfirm) client.log("ALERTA: exclusão recusada porque confirm não está true. " + errorText);
+client.test(missingConfirm ? "Alerta: faltou confirmação" : "apontamento do cronômetro apagado", function() {
+  client.assert(!result.isError, errorText || "A ferramenta retornou erro");
+});
+%}
+
 ### Enviar timesheet (escreve na conta)
+# @timesheetSubmitPeriodStart=2026-10-05
+# @timesheetSubmitPeriodEnd=2026-10-11
 POST {{host}}/mcp
 Content-Type: application/json
 x-api-token: {{token}}
@@ -319,8 +524,72 @@ x-api-token: {{token}}
   "params": {
     "name": "submit_timesheet",
     "arguments": {
-      "period_start": "2026-10-05",
-      "period_end": "2026-10-11"
+      "period_start": "{{timesheetSubmitPeriodStart}}",
+      "period_end": "{{timesheetSubmitPeriodEnd}}"
     }
   }
 }
+
+### Excluir projeto (destrutivo; usa o id criado ou o @projectId do topo)
+# @projectId=1
+# @projectDeleteConfirm=true
+# @projectDeleteReason=Exemplo do HTTP Client
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 23,
+  "method": "tools/call",
+  "params": {
+    "name": "delete_project",
+    "arguments": {
+      "projectId": {{projectId}},
+      "confirm": {{projectDeleteConfirm}},
+      "reason": "{{projectDeleteReason}}"
+    }
+  }
+}
+
+> {%
+var result = response.body.result || {};
+var errorText = (result.content && result.content[0] && result.content[0].text) || "";
+var missingConfirm = result.isError && /confirm:\s*true/.test(errorText);
+if (missingConfirm) client.log("ALERTA: exclusão recusada porque confirm não está true. " + errorText);
+client.test(missingConfirm ? "Alerta: faltou confirmação" : "projeto excluído", function() {
+  client.assert(!result.isError, errorText || "A ferramenta retornou erro");
+});
+%}
+
+### Excluir cliente (destrutivo; usa o id criado ou o @customerId do topo)
+# @customerId=1
+# @customerDeleteConfirm=true
+# @customerDeleteReason=Exemplo do HTTP Client
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 25,
+  "method": "tools/call",
+  "params": {
+    "name": "delete_customer",
+    "arguments": {
+      "customerId": {{customerId}},
+      "confirm": {{customerDeleteConfirm}},
+      "reason": "{{customerDeleteReason}}"
+    }
+  }
+}
+
+> {%
+var result = response.body.result || {};
+var errorText = (result.content && result.content[0] && result.content[0].text) || "";
+var missingConfirm = result.isError && /confirm:\s*true/.test(errorText);
+if (missingConfirm) client.log("ALERTA: exclusão recusada porque confirm não está true. " + errorText);
+client.test(missingConfirm ? "Alerta: faltou confirmação" : "cliente excluído", function() {
+  client.assert(!result.isError, errorText || "A ferramenta retornou erro");
+});
+%}

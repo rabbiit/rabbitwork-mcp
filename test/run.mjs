@@ -193,7 +193,7 @@ await t('.cursor-plugin/plugin.json (Cursor Marketplace format): valid, consiste
   assert.equal(srv.command, 'node'); assert.deepEqual(srv.args, ['${CURSOR_PLUGIN_ROOT}/server/index.mjs']); assert.equal(srv.cwd, '${CURSOR_PLUGIN_ROOT}');
   for (const v of Object.values(srv.env)) { assert.match(v, /^\$\{[A-Z_]+\}$/); assert.ok(cp.variables.properties[v.slice(2, -1)], v); }
   const skill = readFileSync(path.join(root, 'skills/rabbitwork-timesheets/SKILL.md'), 'utf8');
-  assert.match(skill, /^---\nname: rabbitwork-timesheets\ndescription: .+\n---\n/);
+  assert.match(skill, /^---\r?\nname: rabbitwork-timesheets\r?\ndescription: .+\r?\n---\r?\n/);
   for (const f of ['LICENSE', 'README.md', '.gitignore', 'assets/logo.svg']) assert.ok(existsSync(path.join(root, f)), f);
   assert.match(readFileSync(path.join(root, 'LICENSE'), 'utf8'), /^MIT License/);
 });

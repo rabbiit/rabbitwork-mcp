@@ -1,8 +1,9 @@
-# dependencies / tooling (the plugin itself has none)
+# deploy tooling only; the MCP server itself has no dependencies
 node_modules/
 # local env and secrets — never commit tokens
 .env
 .env.*
+http-client.env.json
 http-client.private.env.json
 *.pem
 *.key
@@ -15,6 +16,8 @@ Thumbs.db
 .serverless/
 
 # logs and scratch
+log/
+.deploy.lock
 *.log
 npm-debug.log*
 tmp/

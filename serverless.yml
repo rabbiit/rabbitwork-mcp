@@ -4,11 +4,29 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
+  profile: rabbiit
   stage: ${opt:stage, 'dev'}
   timeout: 29
   memorySize: 256
   httpApi:
     cors: true
+  environment:
+    RABBITWORK_API_BASE_URL: ${ssm:/rabbit-mcp/${self:provider.stage}/api-base-url, 'https://app.rabbiit.com/api/v1'}
+    RABBITWORK_MCP_DOMAIN: ${ssm:/rabbit-mcp/${self:provider.stage}/mcp-domain, 'mcp.rabbitwork.io'}
+
+custom:
+  customDomain:
+    domainName: ${ssm:/rabbit-mcp/${self:provider.stage}/mcp-domain, 'mcp.rabbitwork.io'}
+    basePath: ''
+    certificateName: rabbitwork.io
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+    endpointType: regional
+    apiType: http
+    securityPolicy: tls_1_2
+
+plugins:
+  - serverless-domain-manager
 
 functions:
   mcp:
@@ -27,6 +45,8 @@ package:
     - '!test/**'
     - '!docs/**'
     - '!.git/**'
+    - '!.env'
+    - '!.env.*'
 
 
 

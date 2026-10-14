@@ -1,0 +1,11 @@
+{
+  "name": "rabbit-mcp",
+  "private": true,
+  "scripts": {
+    "deploy": "tsx deploy.ts"
+  },
+  "devDependencies": {
+    "serverless-domain-manager": "^6.1.0",
+    "tsx": "^4.20.5"
+  }
+}

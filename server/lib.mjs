@@ -1,6 +1,7 @@
 // Shared runtime: env, HTTP client (JSON + multipart), paging, argument validation. Zero dependencies.
 // (generic route-based tools live in build.mjs)
 import { AsyncLocalStorage } from 'node:async_hooks';
+import path from 'node:path';
 
 export const DEFAULT_BASE_URL = 'https://app.rabbiit.com/api/v1';
 export const USER_AGENT = 'rabbitwork-agent-plugin/1.0.0';
@@ -153,7 +154,7 @@ export function validate(args, spec) {
       case 'any': out[k] = v; break;
       case 'tri': if (v !== true && v !== false && v !== 'all') throw new ToolError(`"${k}" must be true, false or "all"`); out[k] = v; break;
       case 'url': { let u; try { u = new URL(v); } catch { throw new ToolError(`"${k}" must be a valid URL`); } if (s.httpsOnly && u.protocol !== 'https:') throw new ToolError(`"${k}" must use https://`); out[k] = String(v); break; }
-      case 'filePath': if (typeof v !== 'string' || !v.startsWith('/')) throw new ToolError(`"${k}" must be an absolute file path`); out[k] = v; break;
+      case 'filePath': if (typeof v !== 'string' || !path.isAbsolute(v)) throw new ToolError(`"${k}" must be an absolute file path`); out[k] = v; break;
       case 'number': { const n = Number(v); if (typeof v === 'boolean' || v === '' || !Number.isFinite(n) || n < 0) throw new ToolError(`"${k}" must be a non-negative number`); out[k] = n; break; }
       case 'boolean': if (typeof v !== 'boolean') throw new ToolError(`"${k}" must be a boolean`); out[k] = v; break;
       case 'intArray': {
