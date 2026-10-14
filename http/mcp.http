@@ -1,0 +1,326 @@
+// PhpStorm HTTP Client. Na seta do pedido, escolha o ambiente "local".
+// O token fica em http/http-client.private.env.json (não entra no git).
+// O servidor precisa estar no ar: node server/http.mjs
+//
+// Troque estes IDs pelos da sua conta antes de disparar escritas ou exclusões.
+@projectId = 1
+@timeEntryId = 1
+
+
+### Saúde
+GET {{host}}/health
+
+### Initialize
+POST {{host}}/mcp
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {}
+  }
+}
+
+### Lista de ferramentas
+POST {{host}}/mcp
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list",
+  "params": {}
+}
+
+### Listar projetos
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "list_projects",
+    "arguments": {}
+  }
+}
+
+### Um projeto
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "tools/call",
+  "params": {
+    "name": "get_project",
+    "arguments": {
+      "projectId": {{projectId}}
+    }
+  }
+}
+
+### Projetos arquivados
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "tools/call",
+  "params": {
+    "name": "list_projects",
+    "arguments": {
+      "active": false
+    }
+  }
+}
+
+### Cronômetro atual
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "method": "tools/call",
+  "params": {
+    "name": "get_current_timer",
+    "arguments": {}
+  }
+}
+
+### Horas no período
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "method": "tools/call",
+  "params": {
+    "name": "list_time_entries",
+    "arguments": {
+      "from": "2026-10-06",
+      "to": "2026-10-12",
+      "project": {{projectId}}
+    }
+  }
+}
+
+### Relatório detalhado
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "method": "tools/call",
+  "params": {
+    "name": "get_detailed_report",
+    "arguments": {
+      "date_execution_start": "2026-10-06",
+      "date_execution_end": "2026-10-12"
+    }
+  }
+}
+
+### Relatório resumido
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 9,
+  "method": "tools/call",
+  "params": {
+    "name": "get_summary_report",
+    "arguments": {
+      "date_execution_start": "2026-10-06",
+      "date_execution_end": "2026-10-12"
+    }
+  }
+}
+
+### Clientes ativos
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "method": "tools/call",
+  "params": {
+    "name": "list_customers",
+    "arguments": {}
+  }
+}
+
+### Usuários ativos
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 11,
+  "method": "tools/call",
+  "params": {
+    "name": "list_users",
+    "arguments": {}
+  }
+}
+
+### To-dos
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 12,
+  "method": "tools/call",
+  "params": {
+    "name": "list_todos",
+    "arguments": {
+      "project_id": {{projectId}}
+    }
+  }
+}
+
+### Equipes
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 13,
+  "method": "tools/call",
+  "params": {
+    "name": "list_teams",
+    "arguments": {}
+  }
+}
+
+### Aprovações de timesheet
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 14,
+  "method": "tools/call",
+  "params": {
+    "name": "list_timesheet_approvals",
+    "arguments": {}
+  }
+}
+
+### Criar apontamento (escreve na conta)
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 15,
+  "method": "tools/call",
+  "params": {
+    "name": "create_time_entry",
+    "arguments": {
+      "project_id": {{projectId}},
+      "date_execution": "2026-10-14",
+      "time_total": "01:00:00",
+      "description": "Exemplo via HTTP Client"
+    }
+  }
+}
+
+### Editar apontamento (só os campos enviados)
+@EditTimeEntryId = 856
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 16,
+  "method": "tools/call",
+  "params": {
+    "name": "update_time_entry",
+    "arguments": {
+      "timeEntryId": {{EditTimeEntryId}},
+      "description": "Descrição alterada pelo exemplo..."
+    }
+  }
+}
+
+### Apagar apontamento (destrutivo; confirm é obrigatório neste HTTP)
+@DeleteTimeEntryId = 856
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 19,
+  "method": "tools/call",
+  "params": {
+    "name": "delete_time_entry",
+    "arguments": {
+      "timeEntryId": {{DeleteTimeEntryId}},
+      "confirm": true,
+      "reason": "Exemplo do HTTP Client"
+    }
+  }
+}
+
+### Iniciar cronômetro (escreve na conta)
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 17,
+  "method": "tools/call",
+  "params": {
+    "name": "start_stopwatch",
+    "arguments": {
+      "timeEntryId": {{timeEntryId}}
+    }
+  }
+}
+
+### Enviar timesheet (escreve na conta)
+POST {{host}}/mcp
+Content-Type: application/json
+x-api-token: {{token}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 18,
+  "method": "tools/call",
+  "params": {
+    "name": "submit_timesheet",
+    "arguments": {
+      "period_start": "2026-10-05",
+      "period_end": "2026-10-11"
+    }
+  }
+}

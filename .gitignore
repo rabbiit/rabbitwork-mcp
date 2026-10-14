@@ -3,6 +3,7 @@ node_modules/
 # local env and secrets — never commit tokens
 .env
 .env.*
+http-client.private.env.json
 *.pem
 *.key
 # OS / editor
@@ -10,6 +11,9 @@ node_modules/
 Thumbs.db
 .vscode/
 .idea/
+# serverless packaging
+.serverless/
+
 # logs and scratch
 *.log
 npm-debug.log*

@@ -1,7 +1,7 @@
 // Generic tool builder over the fixed route table (server/spec/routes.mjs).
 import { ROUTES } from './spec/routes.mjs';
 import { shapeFrom, diff, camel } from './normalize.mjs';
-import { request, paged, unwrap, schemaOf, validate, ToolError } from './lib.mjs';
+import { request, paged, unwrap, schemaOf, validate, ToolError, requestContext } from './lib.mjs';
 
 export const KIND_TEXT = {
   READ: 'READ.',
@@ -162,6 +162,13 @@ export function fromRoute(key, cfg) {
   }
 
   async function run(v, mcp) {
+    const remote = requestContext.getStore()?.remote;
+    if (remote) {
+      const readsLocalFile = Object.entries(args).some(([name, spec]) => spec.type === 'filePath' && v[name] !== undefined);
+      if (readsLocalFile) {
+        throw new ToolError(`Refused: ${cfg.name} reads a file from the local disk and only works in the stdio plugin. No request was sent.`);
+      }
+    }
     if (cfg.run) return cfg.run(v, { r, args, norm });
     const path = pathOf(r, v);
     if (op === 'read') {

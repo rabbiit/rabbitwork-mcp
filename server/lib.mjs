@@ -1,5 +1,6 @@
 // Shared runtime: env, HTTP client (JSON + multipart), paging, argument validation. Zero dependencies.
 // (generic route-based tools live in build.mjs)
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 export const DEFAULT_BASE_URL = 'https://app.rabbiit.com/api/v1';
 export const USER_AGENT = 'rabbitwork-agent-plugin/1.0.0';
@@ -10,8 +11,20 @@ export const env = (k) => {
   return !v || /^\$\{[^}]*\}$/.test(v) ? undefined : v;
 };
 
+// Per HTTP/Lambda request. Absent store means stdio: the token comes from the environment.
+export const requestContext = new AsyncLocalStorage();
+
+export function currentToken() {
+  const store = requestContext.getStore();
+  if (store) return store.token || undefined;
+  return env('RABBITWORK_API_TOKEN');
+}
+
 export class ToolError extends Error { constructor(m, status) { super(m); if (status) this.status = status; } }
-export const redact = (s) => { const t = env('RABBITWORK_API_TOKEN'); return t ? String(s).split(t).join('[REDACTED]') : String(s); };
+export const redact = (s) => {
+  const token = currentToken();
+  return token ? String(s).split(token).join('[REDACTED]') : String(s);
+};
 
 export const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s);
 export const isIds = (s) => /^[\w-]+(,[\w-]+)*$/.test(s);
@@ -21,8 +34,14 @@ export const posInt = (v, name) => {
   return n;
 };
 export async function request(method, path, { query, body } = {}) {
-  const token = env('RABBITWORK_API_TOKEN');
+  const token = currentToken();
   if (!token) {
+    const store = requestContext.getStore();
+    if (store?.remote) {
+      throw new ToolError(
+        'Personal token is missing. Send the x-api-token header or Authorization: Bearer on the MCP request. No request was sent.'
+      );
+    }
     throw new ToolError(
       'RABBITWORK_API_TOKEN is not set. Create a personal token in the Rabbitwork app (Settings > You > My tokens; ' +
         'see https://api-docs.rabbiit.com/) and configure it as the plugin secret variable. No request was sent.'

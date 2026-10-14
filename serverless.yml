@@ -1,0 +1,32 @@
+service: rabbit-mcp
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  timeout: 29
+  memorySize: 256
+  httpApi:
+    cors: true
+
+functions:
+  mcp:
+    handler: server/lambda.handler
+    events:
+      - httpApi:
+          path: /mcp
+          method: post
+      - httpApi:
+          path: /health
+          method: get
+
+package:
+  patterns:
+    - 'server/**'
+    - '!test/**'
+    - '!docs/**'
+    - '!.git/**'
+
+
+
