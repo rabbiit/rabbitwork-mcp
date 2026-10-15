@@ -22,7 +22,21 @@ function fill(template, values) {
     });
 }
 
-function pageResponse(statusCode, values) {
+function contentSecurityPolicy(redirectUri) {
+    // Chrome checks form-action against the redirect that follows the POST, and
+    // blocks the submit itself when base-uri is 'none'.
+    const formAction = ["'self'"];
+    if (redirectUri) {
+        try {
+            formAction.push(new URL(redirectUri).origin);
+        } catch {
+            // The form still posts to this server.
+        }
+    }
+    return `default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action ${formAction.join(' ')}; base-uri 'self'`;
+}
+
+function pageResponse(statusCode, values, redirectUri) {
     return {
         statusCode,
         headers: {
@@ -30,7 +44,7 @@ function pageResponse(statusCode, values) {
             'cache-control': 'no-store',
             'referrer-policy': 'no-referrer',
             'x-frame-options': 'DENY',
-            'content-security-policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'",
+            'content-security-policy': contentSecurityPolicy(redirectUri),
         },
         body: fill(pageTemplate, values),
     };
@@ -100,5 +114,5 @@ export function authorizeForm({clientName, redirectUri, fields, message}) {
         localAttrs: loop ? '' : 'hidden',
         fields: fields.map(([name, value]) => hidden(name, value)).join(''),
         cancel: esc(cancelHref(redirectUri, fields)),
-    });
+    }, redirectUri);
 }

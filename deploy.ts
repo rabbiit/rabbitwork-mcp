@@ -4,7 +4,7 @@
 //   npm run deploy -- staging   -> staging
 //   npm run deploy -- prod      -> prod
 // Os testes locais rodam antes. O deploy só segue se eles passarem.
-// Em prod, confirme digitando prod. O log fica em log/.
+// Em prod, confirme digitando prod. A patch sobe sozinha (1.1.0 vira 1.1.1). O log fica em log/.
 // A AWS usa o profile local "rabbiit", o mesmo do Rabbit App.
 
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
@@ -190,6 +190,7 @@ async function main(): Promise<void> {
   write(`Domain: o hostname vem do SSM na hora do deploy.\n\n`);
 
   await confirmProd();
+  await bumpProdVersion();
 
   for (const test of tests) {
     write(`${blue}Running ${test}...${reset}\n`);
@@ -205,7 +206,17 @@ async function main(): Promise<void> {
   write(`${blue}Deploying to ${stage}...${reset}\n`);
   await runCommand(`serverless deploy --stage ${stage} --aws-profile ${awsProfile}`, awsEnv);
   write(`${green}${bold}${check} Deployment to ${stage} completed.${reset}\n`);
+  if (stage === 'prod') {
+    write(`${yellow}Lembrete: commite server/version.mjs, package.json, plugin.json e .cursor-plugin/plugin.json juntos.${reset}\n`);
+  }
   finish(0);
+}
+
+async function bumpProdVersion(): Promise<void> {
+  if (stage !== 'prod') return;
+  write(`${blue}Bumping patch version for production deploy...${reset}\n`);
+  await runCommand('node scripts/bump-version.mjs');
+  write(`${green}Patch version bumped.${reset}\n\n`);
 }
 
 main().catch((error: Error) => {

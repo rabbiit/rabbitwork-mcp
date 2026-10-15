@@ -325,6 +325,8 @@ await t('oauth code exchange stores the personal token inside the bearer', async
     assert.equal(logo.statusCode, 200);
     assert.match(logo.headers['content-type'], /image\/svg\+xml/);
     assert.match(logo.body, /viewBox="0 0 290 56"/);
+    assert.match(page.headers['content-security-policy'], /form-action 'self' https:\/\/claude\.ai/);
+    assert.match(page.headers['content-security-policy'], /base-uri 'self'/);
     assert.match(page.body, /claude\.ai/);
     assert.doesNotMatch(page.body, /persona-tok-1/);
 
@@ -435,6 +437,7 @@ await t('oauth accepts the ChatGPT redirect and a loopback port', async () => {
     });
     assert.equal(chatgpt.statusCode, 200);
     assert.match(chatgpt.body, /ChatGPT/);
+    assert.match(chatgpt.headers['content-security-policy'], /form-action 'self' https:\/\/chatgpt\.com/);
     const loop = await handleHttpRequest({
         method: 'GET',
         path: authorizeQuery({
@@ -449,6 +452,7 @@ await t('oauth accepts the ChatGPT redirect and a loopback port', async () => {
     });
     assert.equal(loop.statusCode, 200);
     assert.match(loop.body, /on this computer/);
+    assert.match(loop.headers['content-security-policy'], /form-action 'self' http:\/\/127\.0\.0\.1:3118/);
 });
 
 await t('oauth refuses an invalid personal token and an expired access token', async () => {

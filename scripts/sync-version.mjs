@@ -7,18 +7,22 @@ import { VERSION } from '../server/version.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = ['package.json', 'plugin.json', '.cursor-plugin/plugin.json'];
 
-export function syncVersion(dir = root) {
+export function writeVersion(version, dir = root) {
   const changed = [];
   for (const rel of FILES) {
     const file = path.join(dir, rel);
     const text = readFileSync(file, 'utf8');
     if (!/"version"\s*:/.test(text)) throw new Error(`${rel} has no version field`);
-    const next = text.replace(/("version"\s*:\s*")[^"]+(")/, `$1${VERSION}$2`);
+    const next = text.replace(/("version"\s*:\s*")[^"]+(")/, `$1${version}$2`);
     if (next === text) continue;
     writeFileSync(file, next);
     changed.push(rel);
   }
   return changed;
+}
+
+export function syncVersion(dir = root) {
+  return writeVersion(VERSION, dir);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

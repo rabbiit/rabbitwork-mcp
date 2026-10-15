@@ -1,7 +1,7 @@
 // Zero-dependency local tests. Never calls the live Rabbitwork API: every HTTP request goes to a local mock server.
 import {spawn, spawnSync} from 'node:child_process';
 import {createServer} from 'node:http';
-import {readFileSync, writeFileSync, mkdtempSync, existsSync} from 'node:fs';
+import {readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, existsSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
@@ -10,6 +10,7 @@ import {ROUTES} from '../server/spec/routes.mjs';
 import {VERSION} from '../server/version.mjs';
 import {normalizeTimeEntry, parseDurationMinutes, shapeFrom} from '../server/normalize.mjs';
 import {syncVersion} from '../scripts/sync-version.mjs';
+import {bumpPatch, nextPatch} from '../scripts/bump-version.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let passed = 0, failed = 0;
@@ -238,6 +239,27 @@ await t('plugin.json valid vs Agent Plugins 1.0.0 schema; counts in description'
     assert.equal(doc.author.email, 'dyorg@rabbiit.com');
     assert.equal(doc.homepage, 'https://rabbitwork.io');
     assert.equal(doc.license, 'MIT');
+});
+await t('production deploy raises only the patch number', () => {
+    assert.equal(nextPatch('1.1.0'), '1.1.1');
+    assert.equal(nextPatch('1.10.9'), '1.10.10');
+    assert.throws(() => nextPatch('1.1'), /major\.minor\.patch/);
+    const dir = mkdtempSync(path.join(tmpdir(), 'rw-ver-'));
+    try {
+        mkdirSync(path.join(dir, 'server'));
+        mkdirSync(path.join(dir, '.cursor-plugin'));
+        writeFileSync(path.join(dir, 'server/version.mjs'), "export const VERSION = '1.1.0';\n");
+        for (const rel of ['package.json', 'plugin.json', '.cursor-plugin/plugin.json']) {
+            writeFileSync(path.join(dir, rel), '{\n  "version": "1.1.0"\n}\n');
+        }
+        assert.equal(bumpPatch(dir), '1.1.1');
+        assert.match(readFileSync(path.join(dir, 'server/version.mjs'), 'utf8'), /export const VERSION = '1\.1\.1'/);
+        for (const rel of ['package.json', 'plugin.json', '.cursor-plugin/plugin.json']) {
+            assert.equal(JSON.parse(readFileSync(path.join(dir, rel), 'utf8')).version, '1.1.1');
+        }
+    } finally {
+        rmSync(dir, {recursive: true, force: true});
+    }
 });
 await t('mcp.json valid vs schema; env only ${VAR} placeholders; every placeholder declared; no UA vars', () => {
     const schema = JSON.parse(readFileSync(path.join(root, 'test/schemas/mcp.schema.json'), 'utf8'));
