@@ -280,7 +280,7 @@ await t('oauth discovery documents describe this server', async () => {
     assert.equal(authBody.registration_endpoint, undefined);
 });
 
-await t('oauth rejects an unknown client without fetching it', async () => {
+await t('oauth rejects an invalid client_id without fetching metadata', async () => {
     clearOauthClientCache();
     let fetched = false;
     globalThis.fetch = async () => {
@@ -291,8 +291,8 @@ await t('oauth rejects an unknown client without fetching it', async () => {
     const res = await handleHttpRequest({
         method: 'GET',
         path: authorizeQuery({
-            clientId: 'https://evil.example/client.json',
-            redirectUri: 'https://evil.example/callback',
+            clientId: 'http://example.com/client.json',
+            redirectUri: 'https://example.com/callback',
             challenge,
         }),
         headers: originHeaders(),
@@ -325,8 +325,8 @@ await t('oauth code exchange stores the personal token inside the bearer', async
     assert.equal(logo.statusCode, 200);
     assert.match(logo.headers['content-type'], /image\/svg\+xml/);
     assert.match(logo.body, /viewBox="0 0 290 56"/);
-    assert.match(page.headers['content-security-policy'], /form-action 'self' https:\/\/claude\.ai/);
-    assert.match(page.headers['content-security-policy'], /base-uri 'self'/);
+    assert.doesNotMatch(page.headers['content-security-policy'], /form-action/);
+    assert.match(page.body, /action="https:\/\/mcp\.test\/authorize"/);
     assert.match(page.body, /claude\.ai/);
     assert.doesNotMatch(page.body, /persona-tok-1/);
 
@@ -437,7 +437,7 @@ await t('oauth accepts the ChatGPT redirect and a loopback port', async () => {
     });
     assert.equal(chatgpt.statusCode, 200);
     assert.match(chatgpt.body, /ChatGPT/);
-    assert.match(chatgpt.headers['content-security-policy'], /form-action 'self' https:\/\/chatgpt\.com/);
+    assert.doesNotMatch(chatgpt.headers['content-security-policy'], /form-action/);
     const loop = await handleHttpRequest({
         method: 'GET',
         path: authorizeQuery({
@@ -452,7 +452,7 @@ await t('oauth accepts the ChatGPT redirect and a loopback port', async () => {
     });
     assert.equal(loop.statusCode, 200);
     assert.match(loop.body, /on this computer/);
-    assert.match(loop.headers['content-security-policy'], /form-action 'self' http:\/\/127\.0\.0\.1:3118/);
+    assert.doesNotMatch(loop.headers['content-security-policy'], /form-action/);
 });
 
 await t('oauth refuses an invalid personal token and an expired access token', async () => {

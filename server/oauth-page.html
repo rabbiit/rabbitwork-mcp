@@ -117,7 +117,7 @@
         <p><strong>{{clientName}}</strong> will access Rabbitwork with the permissions of the token you paste. Create the token in Settings &gt; You &gt; My tokens. <a href="https://www.rabbiit.com/help/how-to-use-the-api-and-access-tokens" target="_blank" rel="noopener noreferrer">How to create a token</a>.</p>
         <p>You will then return to <strong>{{host}}</strong>.</p>
         <p {{localAttrs}}>The return address is on this computer. Confirm that you started this connection.</p>
-        <form method="post" action="/authorize" autocomplete="off">
+        <form method="post" action="{{authorizeAction}}" autocomplete="off">
             {{fields}}
             <label for="token">Personal token</label>
             <input id="token" name="token" type="password" maxlength="512" required spellcheck="false" autocomplete="off">

@@ -1,4 +1,4 @@
-// OAuth 2.1 authorization-code + PKCE for ChatGPT and Claude (CIMD, no client store).
+// OAuth 2.1 authorization-code + PKCE (CIMD, no client store).
 // Access and refresh tokens are sealed envelopes around the Rabbitwork personal token.
 // Refresh tokens are rotated, and the previous one stays valid until it expires.
 // Revoking the personal token in Rabbitwork is what stops later API calls.
@@ -7,7 +7,6 @@ import {DEFAULT_BASE_URL, USER_AGENT, env} from './lib.mjs';
 import {isLoopbackHost, jsonResponse as respondJson, normalizeHeaders} from './http-util.mjs';
 import {credentialFromHeader, oauthNow, oauthReady, openSeal, seal, setOauthClock} from './oauth-seal.mjs';
 import {authorizeForm, htmlResponse, logoResponse} from './oauth-page.mjs';
-import {TRUSTED_OAUTH_CLIENT_HOSTS} from './trusted-oauth-clients.mjs';
 
 export {credentialFromHeader, setOauthClock};
 
@@ -97,7 +96,6 @@ function clientIdUrl(clientId) {
         return null;
     }
     if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || url.port) return null;
-    if (!TRUSTED_OAUTH_CLIENT_HOSTS.has(url.hostname)) return null;
     return url;
 }
 
@@ -186,22 +184,22 @@ function redirectBack(redirectUri, params) {
     };
 }
 
-async function resolveClient(params) {
+async function resolveClient(params, origin) {
     const clientId = limited(params.client_id, 512);
     const redirectUri = limited(params.redirect_uri, 512);
     const state = limited(params.state, 512);
     if (!clientIdUrl(clientId) || !acceptableRedirect(redirectUri) || !state) {
-        return {error: htmlResponse(400, 'Connection refused', 'The app that asked for access was not recognized.')};
+        return {error: htmlResponse(400, 'Connection refused', 'The app that asked for access was not recognized.', origin)};
     }
     let doc;
     try {
         doc = await loadClient(clientId);
     } catch {
-        return {error: htmlResponse(400, 'Connection refused', 'The app could not be confirmed. Try connecting again.')};
+        return {error: htmlResponse(400, 'Connection refused', 'The app could not be confirmed. Try connecting again.', origin)};
     }
     const allowed = doc.redirect_uris.some((item) => typeof item === 'string' && redirectsMatch(item, redirectUri));
     if (!allowed) {
-        return {error: htmlResponse(400, 'Connection refused', 'That app\'s return address is not allowed.')};
+        return {error: htmlResponse(400, 'Connection refused', 'That app\'s return address is not allowed.', origin)};
     }
     return {clientId, redirectUri, state, clientName: String(doc.client_name || 'aplicativo').slice(0, 80)};
 }
@@ -261,25 +259,26 @@ function issuePair(personalToken, clientId) {
 
 async function handleAuthorize(method, rawPath, body, origin) {
     if (!oauthReady()) {
-        return htmlResponse(500, 'Connection unavailable', 'The server does not have the OAuth key configured yet.');
+        return htmlResponse(500, 'Connection unavailable', 'The server does not have the OAuth key configured yet.', origin);
     }
     const params = method === 'POST' ? formOf(body) : queryOf(rawPath);
-    const client = await resolveClient(params);
+    const client = await resolveClient(params, origin);
     if (client.error) return client.error;
     const fields = formFields(params, origin);
     if (params.response_type !== 'code' || !pkceOk(params.code_challenge, params.code_challenge_method) || !resourceOk(origin, params.resource)) {
         return redirectBack(client.redirectUri, {error: 'invalid_request', state: client.state, iss: origin});
     }
     if (method === 'GET') {
-        return authorizeForm({clientName: client.clientName, redirectUri: client.redirectUri, fields});
+        return authorizeForm({clientName: client.clientName, redirectUri: client.redirectUri, fields, pageOrigin: origin});
     }
-    if (method !== 'POST') return htmlResponse(405, 'Invalid method', 'Use the Connect button.');
+    if (method !== 'POST') return htmlResponse(405, 'Invalid method', 'Use the Connect button.', origin);
     const token = String(params.token || '').trim();
     if (!token || token.length > 512 || /\s/.test(token)) {
         return authorizeForm({
             clientName: client.clientName,
             redirectUri: client.redirectUri,
             fields,
+            pageOrigin: origin,
             message: 'Paste the Rabbitwork personal token.',
         });
     }
@@ -289,6 +288,7 @@ async function handleAuthorize(method, rawPath, body, origin) {
             clientName: client.clientName,
             redirectUri: client.redirectUri,
             fields,
+            pageOrigin: origin,
             message: check === 'invalid'
                 ? 'That token was not accepted. Check that it is still active in My tokens.'
                 : 'The Rabbitwork API could not be reached. Try again.',
@@ -306,7 +306,7 @@ async function handleAuthorize(method, rawPath, body, origin) {
             exp: Math.floor((oauthNow() + CODE_TTL_MS) / 1000),
         });
     } catch {
-        return htmlResponse(500, 'Connection unavailable', 'The server does not have the OAuth key configured yet.');
+        return htmlResponse(500, 'Connection unavailable', 'The server does not have the OAuth key configured yet.', origin);
     }
     return redirectBack(client.redirectUri, {code, state: client.state, iss: origin});
 }

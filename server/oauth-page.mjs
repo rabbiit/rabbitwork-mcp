@@ -22,21 +22,19 @@ function fill(template, values) {
     });
 }
 
-function contentSecurityPolicy(redirectUri) {
-    // Chrome checks form-action against the redirect that follows the POST, and
-    // blocks the submit itself when base-uri is 'none'.
-    const formAction = ["'self'"];
-    if (redirectUri) {
-        try {
-            formAction.push(new URL(redirectUri).origin);
-        } catch {
-            // The form still posts to this server.
-        }
-    }
-    return `default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action ${formAction.join(' ')}; base-uri 'self'`;
+function contentSecurityPolicy() {
+    // Do not set form-action. Chrome applies it to the redirect after POST and often
+    // blocks the submit to /authorize even when 'self' and the client origin are listed.
+    // The form target is fixed in oauth-page.html; there is no script on this page.
+    return "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; base-uri 'none'";
 }
 
-function pageResponse(statusCode, values, redirectUri) {
+function authorizeActionUrl(pageOrigin) {
+    const base = String(pageOrigin || '').replace(/\/+$/, '');
+    return base ? `${base}/authorize` : '/authorize';
+}
+
+function pageResponse(statusCode, values) {
     return {
         statusCode,
         headers: {
@@ -44,13 +42,13 @@ function pageResponse(statusCode, values, redirectUri) {
             'cache-control': 'no-store',
             'referrer-policy': 'no-referrer',
             'x-frame-options': 'DENY',
-            'content-security-policy': contentSecurityPolicy(redirectUri),
+            'content-security-policy': contentSecurityPolicy(),
         },
         body: fill(pageTemplate, values),
     };
 }
 
-export function htmlResponse(statusCode, title, message) {
+export function htmlResponse(statusCode, title, message, pageOrigin = '') {
     return pageResponse(statusCode, {
         title: esc(title),
         messageAttrs: '',
@@ -63,6 +61,7 @@ export function htmlResponse(statusCode, title, message) {
         localAttrs: 'hidden',
         fields: '',
         cancel: '',
+        authorizeAction: esc(authorizeActionUrl(pageOrigin)),
     });
 }
 
@@ -88,7 +87,7 @@ function cancelHref(redirectUri, fields) {
     return url.toString();
 }
 
-export function authorizeForm({clientName, redirectUri, fields, message}) {
+export function authorizeForm({clientName, redirectUri, fields, message, pageOrigin = ''}) {
     let host = '';
     try {
         host = new URL(redirectUri).host;
@@ -114,5 +113,6 @@ export function authorizeForm({clientName, redirectUri, fields, message}) {
         localAttrs: loop ? '' : 'hidden',
         fields: fields.map(([name, value]) => hidden(name, value)).join(''),
         cancel: esc(cancelHref(redirectUri, fields)),
-    }, redirectUri);
+        authorizeAction: esc(authorizeActionUrl(pageOrigin)),
+    });
 }
